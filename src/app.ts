@@ -26,6 +26,8 @@ export interface App {
   onTrainStart(cb: (train: Train) => void): Unsubscribe;
   onTrainArrive(cb: (train: Train) => void): Unsubscribe;
   onLineSelect(cb: (line: Line) => void): Unsubscribe;
+  /** 走行が到着前に中断された (別の選択・解除) */
+  onRunStop(cb: () => void): Unsubscribe;
   /** リスナー解除と走行停止 */
   destroy(): void;
 }
@@ -100,13 +102,17 @@ export function createApp(root: HTMLElement, options: AppOptions = {}): App {
   const trainStart = emitter<Train>();
   const trainArrive = emitter<Train>();
   const lineSelect = emitter<Line>();
+  const runStop = emitter<void>();
 
   let selection: Selection = { kind: "none" };
   let cancelRun: (() => void) | null = null;
 
   const stopRun = () => {
-    cancelRun?.();
-    cancelRun = null;
+    if (cancelRun) {
+      cancelRun();
+      cancelRun = null;
+      runStop.emit();
+    }
     runner.hide();
   };
 
@@ -173,6 +179,7 @@ export function createApp(root: HTMLElement, options: AppOptions = {}): App {
     onTrainStart: trainStart.on,
     onTrainArrive: trainArrive.on,
     onLineSelect: lineSelect.on,
+    onRunStop: runStop.on,
     destroy() {
       stopRun();
       offTrain();

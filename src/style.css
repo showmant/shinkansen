@@ -287,3 +287,34 @@ body {
   font-size: 0.85rem;
   color: #666;
 }
+
+/* 画面右上の大きなミュートボタン */
+.mute-button {
+  position: fixed;
+  top: 16px;
+  right: 24px;
+  z-index: 10;
+  width: 72px;
+  height: 72px;
+  border: none;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 4px 10px rgb(0 0 0 / 18%);
+  font-size: 2.4rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: transform 0.15s ease;
+}
+
+.mute-button:hover {
+  transform: scale(1.08);
+}
+
+.mute-button:focus-visible {
+  outline: 3px solid #333;
+  outline-offset: 2px;
+}
+
+.mute-button[aria-pressed="true"] {
+  background: #e0e0e0;
+}

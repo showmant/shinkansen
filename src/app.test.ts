@@ -192,6 +192,22 @@ describe("createApp", () => {
     expect(runner().classList.contains("is-hidden")).toBe(true);
   });
 
+  it("走行中に選択を変える・解除すると onRunStop が呼ばれる。到着後は呼ばれない", () => {
+    const onStop = vi.fn();
+    app.onRunStop(onStop);
+    card("nozomi").click();
+    expect(onStop).not.toHaveBeenCalled();
+    card("toki").click();
+    expect(onStop).toHaveBeenCalledTimes(1);
+    clickSea();
+    expect(onStop).toHaveBeenCalledTimes(2);
+
+    card("kamome").click();
+    runToEnd();
+    clickLine("tohoku");
+    expect(onStop).toHaveBeenCalledTimes(2);
+  });
+
   it("イベント購読は解除できる", () => {
     const onStart = vi.fn();
     app.onTrainStart(onStart)();

@@ -14,3 +14,9 @@ npm run build  # dist/ に出力 (base: /shinkansen/)
 
 main への push で GitHub Actions が GitHub Pages にデプロイする
 (リポジトリの Settings → Pages → Source を「GitHub Actions」にしておくこと)。
+
+## 地図データのクレジット
+
+- 日本の海岸線: [Natural Earth](https://www.naturalearthdata.com/) 1:10m Admin 0 – Countries
+  (public domain)。`scripts/build-japan-geo.mjs` で北海道〜九州を抽出・簡略化し
+  `src/map/japan-geo.ts` として同梱している(実行時の外部 fetch なし)。

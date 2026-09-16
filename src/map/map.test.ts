@@ -89,3 +89,65 @@ describe("createJapanMap", () => {
     expect(hitWidth).toBeGreaterThan(strokeWidth * 2);
   });
 });
+
+describe("highlightRoute", () => {
+  const segments = (svg: SVGSVGElement) =>
+    [...svg.querySelectorAll<SVGPolylineElement>(".map-route-segment")].map((el) => ({
+      lineId: el.dataset.lineId,
+      stationIds: el.dataset.stationIds?.split(" "),
+      stroke: el.getAttribute("stroke"),
+    }));
+  const station = (svg: SVGSVGElement, id: string) => {
+    const el = svg.querySelector(`.map-station[data-station-id="${id}"]`);
+    if (!el) throw new Error(`station ${id} not found`);
+    return el;
+  };
+
+  it("走行区間だけを路線ごとの色で太く描き、路線全体と区間外の駅は薄くする", () => {
+    const map = createJapanMap();
+    map.highlightRoute(["tokyo", "ueno", "omiya", "takasaki", "echigo-yuzawa", "nagaoka", "niigata"]);
+
+    const tohoku = lines.find((l) => l.id === "tohoku");
+    const joetsu = lines.find((l) => l.id === "joetsu");
+    expect(segments(map.element)).toEqual([
+      { lineId: "tohoku", stationIds: ["tokyo", "ueno", "omiya"], stroke: tohoku?.color },
+      { lineId: "joetsu", stationIds: ["omiya", "takasaki", "echigo-yuzawa", "nagaoka", "niigata"], stroke: joetsu?.color },
+    ]);
+    const routeWidth = Number(map.element.querySelector(".map-route-segment")?.getAttribute("stroke-width"));
+    const lineWidth = Number(map.element.querySelector(".map-line-stroke")?.getAttribute("stroke-width"));
+    expect(routeWidth).toBeGreaterThan(lineWidth);
+
+    expect(map.element.querySelectorAll(".map-line:not(.is-dimmed)")).toHaveLength(0);
+    expect(station(map.element, "omiya").classList.contains("is-dimmed")).toBe(false);
+    expect(station(map.element, "niigata").classList.contains("is-dimmed")).toBe(false);
+    expect(station(map.element, "sendai").classList.contains("is-dimmed")).toBe(true);
+  });
+
+  it("区間を複数路線が共有するときは preferLineIds の路線の色を使う", () => {
+    const map = createJapanMap();
+    map.highlightRoute(["omiya", "takasaki", "karuizawa"], ["hokuriku"]);
+    expect(segments(map.element).map((s) => s.lineId)).toEqual(["joetsu", "hokuriku"]);
+
+    // 大宮→高崎は上越のみなので preferLineIds に無くても上越の色
+    map.highlightRoute(["takasaki", "karuizawa"], ["joetsu"]);
+    expect(segments(map.element).map((s) => s.lineId)).toEqual(["hokuriku"]);
+  });
+
+  it("null や highlightLines で走行区間を消す", () => {
+    const map = createJapanMap();
+    map.highlightRoute(["tokyo", "ueno"]);
+    map.highlightRoute(null);
+    expect(map.element.querySelectorAll(".map-route-segment, .is-dimmed")).toHaveLength(0);
+
+    map.highlightRoute(["tokyo", "ueno"]);
+    map.highlightLines(["tohoku"]);
+    expect(map.element.querySelectorAll(".map-route-segment")).toHaveLength(0);
+    expect(lineGroup(map.element, "tohoku").classList.contains("is-dimmed")).toBe(false);
+  });
+
+  it("走行区間はクリックを遮らない (下の路線の当たり線に通す)", () => {
+    const map = createJapanMap();
+    map.highlightRoute(["tokyo", "ueno"]);
+    expect(map.element.querySelector(".map-route")?.getAttribute("pointer-events")).toBe("none");
+  });
+});

@@ -7,6 +7,10 @@ import { createProjection, JAPAN_BOUNDS, type Point } from "./projection";
 const SVG_NS = "http://www.w3.org/2000/svg";
 const MAP_WIDTH = 1000;
 const LINE_WIDTH = 7;
+/** 選択中の列車が実際に走る区間の太さ */
+const ROUTE_WIDTH = 14;
+/** 走行区間を地図から浮かせる白いふち */
+const ROUTE_CASING_WIDTH = 22;
 /** 3歳のマウス操作でも当たるよう、見た目よりかなり太い透明な当たり線 */
 const HIT_WIDTH = 32;
 
@@ -40,6 +44,11 @@ export interface JapanMap {
   element: SVGSVGElement;
   /** 指定路線だけを強調し、それ以外を薄くする。null で全路線を通常表示に戻す */
   highlightLines(lineIds: readonly LineId[] | null): void;
+  /**
+   * 駅列 (隣どうしが路線で隣接) の区間だけを路線色で太く描き、全路線と区間外の駅を薄くする。
+   * 複数路線が同じ区間を共有するときは preferLineIds の路線の色を使う。null で消す
+   */
+  highlightRoute(stationIds: readonly string[] | null, preferLineIds?: readonly LineId[]): void;
   /** 路線クリック時のハンドラを登録する。戻り値を呼ぶと解除 */
   onLineClick(cb: (lineId: LineId) => void): () => void;
   /** 駅の SVG 座標 */
@@ -59,6 +68,30 @@ function svg<K extends keyof SVGElementTagNameMap>(
 
 const toPoints = (path: readonly Point[]) =>
   path.map((p) => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(" ");
+
+export interface RouteSegment {
+  lineId: LineId;
+  stationIds: string[];
+}
+
+/** 駅列を、隣接駅間を走る路線ごとの連続区間に分ける */
+export function splitRouteByLine(stationIds: readonly string[], preferLineIds: readonly LineId[] = []): RouteSegment[] {
+  const segments: RouteSegment[] = [];
+  for (let i = 1; i < stationIds.length; i++) {
+    const a = stationIds[i - 1];
+    const b = stationIds[i];
+    const candidates = lines.filter((l) => {
+      const j = l.stationIds.indexOf(a);
+      return j >= 0 && (l.stationIds[j + 1] === b || l.stationIds[j - 1] === b);
+    });
+    const line = candidates.find((l) => preferLineIds.includes(l.id)) ?? candidates[0];
+    if (!line) throw new Error(`stations are not adjacent: ${a} - ${b}`);
+    const last = segments.at(-1);
+    if (last?.lineId === line.id) last.stationIds.push(b);
+    else segments.push({ lineId: line.id, stationIds: [a, b] });
+  }
+  return segments;
+}
 
 export function createJapanMap(): JapanMap {
   const projection = createProjection(JAPAN_BOUNDS, MAP_WIDTH);
@@ -112,6 +145,9 @@ export function createJapanMap(): JapanMap {
   }
   element.append(lineLayer);
 
+  const routeLayer = svg("g", { class: "map-route", "pointer-events": "none" });
+  element.append(routeLayer);
+
   const stationLayer = svg("g", { class: "map-stations" });
   for (const s of stations) {
     const p = getStationPoint(s.id);
@@ -147,19 +183,56 @@ export function createJapanMap(): JapanMap {
     for (const cb of clickHandlers) cb(lineId);
   });
 
+  const dimStations = (isActive: ((g: SVGGElement) => boolean) | null) => {
+    for (const g of element.querySelectorAll<SVGGElement>(".map-station")) {
+      g.classList.toggle("is-dimmed", isActive !== null && !isActive(g));
+    }
+  };
+
   return {
     element,
     getStationPoint,
     getLinePath,
+    highlightRoute(stationIds, preferLineIds = []) {
+      routeLayer.replaceChildren();
+      for (const g of element.querySelectorAll<SVGGElement>(".map-line")) {
+        g.classList.toggle("is-dimmed", stationIds !== null);
+      }
+      if (!stationIds) {
+        dimStations(null);
+        return;
+      }
+      const onRoute = new Set(stationIds);
+      dimStations((g) => onRoute.has(g.dataset.stationId ?? ""));
+
+      const segments = splitRouteByLine(stationIds, preferLineIds);
+      const casings = segments.map((seg) =>
+        svg("polyline", {
+          class: "map-route-casing",
+          points: toPoints(seg.stationIds.map(getStationPoint)),
+          stroke: "#ffffff",
+          "stroke-width": ROUTE_CASING_WIDTH,
+        }),
+      );
+      const strokes = segments.map((seg) =>
+        svg("polyline", {
+          class: "map-route-segment",
+          points: toPoints(seg.stationIds.map(getStationPoint)),
+          stroke: lines.find((l) => l.id === seg.lineId)?.color ?? "#000000",
+          "stroke-width": ROUTE_WIDTH,
+          "data-line-id": seg.lineId,
+          "data-station-ids": seg.stationIds.join(" "),
+        }),
+      );
+      routeLayer.append(...casings, ...strokes);
+    },
     highlightLines(lineIds) {
+      routeLayer.replaceChildren();
       const active = lineIds ? new Set<string>(lineIds) : null;
       for (const g of element.querySelectorAll<SVGGElement>(".map-line")) {
         g.classList.toggle("is-dimmed", active !== null && !active.has(g.dataset.lineId ?? ""));
       }
-      for (const g of element.querySelectorAll<SVGGElement>(".map-station")) {
-        const onActive = (g.dataset.lineIds ?? "").split(" ").some((id) => active?.has(id));
-        g.classList.toggle("is-dimmed", active !== null && !onActive);
-      }
+      dimStations(active && ((g) => (g.dataset.lineIds ?? "").split(" ").some((id) => active.has(id))));
     },
     onLineClick(cb) {
       clickHandlers.add(cb);

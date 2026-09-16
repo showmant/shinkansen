@@ -19,3 +19,66 @@ body {
   text-align: center;
   letter-spacing: 0.1em;
 }
+
+/* 地図 */
+.japan-map {
+  display: block;
+  width: 100%;
+  max-width: 900px;
+  max-height: calc(100vh - 140px);
+  margin: 16px auto 0;
+  border-radius: 24px;
+}
+
+.map-sea {
+  fill: #bfe6f7;
+}
+
+.map-land polygon {
+  fill: #d8efc0;
+  stroke: #a8cf8f;
+  stroke-width: 1.5;
+  stroke-linejoin: round;
+}
+
+.map-line,
+.map-station {
+  transition: opacity 0.3s;
+}
+
+.map-line.is-dimmed,
+.map-station.is-dimmed {
+  opacity: 0.2;
+}
+
+.map-line-stroke,
+.map-line-hit {
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.map-line-hit {
+  cursor: pointer;
+  pointer-events: stroke;
+}
+
+.map-station {
+  pointer-events: none;
+}
+
+.map-station-dot {
+  fill: #fff;
+  stroke: #444;
+  stroke-width: 2.5;
+}
+
+.map-station-label {
+  font-size: 22px;
+  font-weight: bold;
+  fill: #333;
+  stroke: #fff;
+  stroke-width: 5px;
+  stroke-linejoin: round;
+  paint-order: stroke;
+}

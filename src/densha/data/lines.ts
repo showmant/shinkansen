@@ -62,6 +62,7 @@ export const railLines: readonly RailLine[] = [
       "tokyo", "kanda", "ochanomizu", "yotsuya", "shinjuku", "nakano", "koenji", "asagaya", "ogikubo",
       "nishi-ogikubo", "kichijoji", "mitaka", "musashi-sakai", "higashi-koganei", "musashi-koganei", "kokubunji",
       "nishi-kokubunji", "kunitachi", "tachikawa", "hino", "toyoda", "hachioji", "nishi-hachioji", "takao",
+      "sagamiko", "fujino",
     ],
     vehicle: { series: "E233系", shape: "flat", colors: jrColors("#f15a22") },
     source: { operator: JR, routes: ["中央線", "東北線"] },

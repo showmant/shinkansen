@@ -93,6 +93,9 @@ const rows: readonly Row[] = [
   ["hachioji", "八王子", "はちおうじ"],
   ["nishi-hachioji", "西八王子", "にしはちおうじ"],
   ["takao", "高尾", "たかお"],
+  // JR 中央本線 (高尾以西・神奈川県相模原市)
+  ["sagamiko", "相模湖", "さがみこ"],
+  ["fujino", "藤野", "ふじの"],
   // JR 中央・総武線各駅停車
   ["higashi-nakano", "東中野", "ひがしなかの"],
   ["okubo", "大久保", "おおくぼ"],

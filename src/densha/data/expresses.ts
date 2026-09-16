@@ -98,6 +98,23 @@ export const limitedExpresses: readonly LimitedExpress[] = [
     fact: "ぜんぶ グリーンしゃ の ごうか な とっきゅう だよ。",
   },
   {
+    id: "azusa",
+    company: "jr",
+    name: "あずさ",
+    kana: "あずさ",
+    vehicle: {
+      series: "E353系",
+      shape: "nose",
+      colors: { body: "#f5f6f7", stripe: "#5b2c83", accent: "#8e6bb0", front: "#2b2f36" },
+    },
+    lineIds: ["chuo-rapid"],
+    from: "shinjuku",
+    to: "fujino",
+    speechTo: "まつもと",
+    edgeExit: true,
+    fact: "ながのけん の まつもと まで、やま の ほう へ とおくまで はしる とっきゅう だよ。",
+  },
+  {
     id: "spacia-x",
     company: "tobu",
     name: "スペーシア X",

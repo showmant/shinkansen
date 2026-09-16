@@ -71,6 +71,17 @@ body {
   stroke-linejoin: round;
 }
 
+.map-route-casing,
+.map-route-segment {
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.map-route-casing {
+  opacity: 0.85;
+}
+
 .map-line-hit {
   cursor: pointer;
   pointer-events: stroke;

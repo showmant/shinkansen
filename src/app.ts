@@ -110,8 +110,8 @@ export function createApp(root: HTMLElement, options: AppOptions = {}): App {
     runner.hide();
   };
 
-  const run = (train: Train) => {
-    const points = buildRoute(train, lines).map((id) => map.getStationPoint(id));
+  const run = (train: Train, route: readonly string[]) => {
+    const points = route.map((id) => map.getStationPoint(id));
     runner.show(train);
     trainStart.emit(train);
     cancelRun = startRun({
@@ -139,11 +139,12 @@ export function createApp(root: HTMLElement, options: AppOptions = {}): App {
         break;
       case "train": {
         const train = findById(trains, selection.trainId);
-        map.highlightLines(train.lineIds);
+        const route = buildRoute(train, lines);
+        map.highlightRoute(route, train.lineIds);
         setSelectedTrain(train.id);
         emphasizeTrains(null);
         renderTrainInfo(info, train);
-        run(train);
+        run(train, route);
         break;
       }
       case "line": {

@@ -66,6 +66,12 @@ describe("createApp", () => {
     lineGroup(id).querySelector(".map-line-hit")?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
   const clickSea = () => $(".map-sea").dispatchEvent(new MouseEvent("click", { bubbles: true }));
   const runner = () => $<SVGGElement>(".map-runner");
+  const routeSegments = () =>
+    [...root.querySelectorAll<SVGPolylineElement>(".map-route-segment")].map((el) => ({
+      lineId: el.dataset.lineId,
+      stationIds: el.dataset.stationIds?.split(" ") ?? [],
+    }));
+  const stationDimmed = (id: string) => $(`.map-station[data-station-id="${id}"]`).classList.contains("is-dimmed");
 
   beforeEach(() => {
     time = 0;
@@ -93,9 +99,7 @@ describe("createApp", () => {
     app.onTrainArrive(onArrive);
 
     card("hayabusa").click();
-    expect(lineGroup("tohoku").classList.contains("is-dimmed")).toBe(false);
-    expect(lineGroup("hokkaido").classList.contains("is-dimmed")).toBe(false);
-    expect(lineGroup("tokaido").classList.contains("is-dimmed")).toBe(true);
+    expect(routeSegments().map((s) => s.lineId)).toEqual(["tohoku", "hokkaido"]);
     expect(card("hayabusa").classList.contains("is-selected")).toBe(true);
     expect($(".train-info__title").textContent).toBe("はやぶさ / とうきょう → しんはこだてほくと");
     expect($(".train-info__fact").textContent).toContain("ほっかいどう");
@@ -108,6 +112,35 @@ describe("createApp", () => {
     expect(onArrive).toHaveBeenCalledTimes(1);
     expect(onArrive).toHaveBeenCalledWith(expect.objectContaining({ id: "hayabusa" }));
     expect(runner().classList.contains("is-arrived")).toBe(true);
+  });
+
+  it("選択時は路線全体ではなく実際の走行区間だけを光らせる (とき: 東北は大宮まで)", () => {
+    card("toki").click();
+    expect(routeSegments()).toEqual([
+      { lineId: "tohoku", stationIds: ["tokyo", "ueno", "omiya"] },
+      { lineId: "joetsu", stationIds: ["omiya", "takasaki", "echigo-yuzawa", "nagaoka", "niigata"] },
+    ]);
+    expect(root.querySelectorAll(".map-line:not(.is-dimmed)")).toHaveLength(0);
+    expect(stationDimmed("omiya")).toBe(false);
+    expect(stationDimmed("sendai")).toBe(true);
+    expect(stationDimmed("shin-aomori")).toBe(true);
+  });
+
+  it("路線をまたいで他路線を経由する区間も光る (かがやき: 大宮→高崎)", () => {
+    card("kagayaki").click();
+    expect(routeSegments().map((s) => s.lineId)).toEqual(["tohoku", "joetsu", "hokuriku"]);
+    expect(routeSegments()[1].stationIds).toEqual(["omiya", "takasaki"]);
+    expect(stationDimmed("takasaki")).toBe(false);
+    expect(stationDimmed("niigata")).toBe(true);
+  });
+
+  it("別カードに切り替えると走行区間も置き換わり、解除で消える", () => {
+    card("toki").click();
+    card("nozomi").click();
+    expect(routeSegments().map((s) => s.lineId)).toEqual(["tokaido", "sanyo"]);
+    card("nozomi").click();
+    expect(routeSegments()).toHaveLength(0);
+    expect(root.querySelectorAll(".is-dimmed")).toHaveLength(0);
   });
 
   it("走行中に別カードを押すと前の走行は中断され、新しい方だけ到着する", () => {
@@ -137,6 +170,8 @@ describe("createApp", () => {
     app.onLineSelect(onLine);
     card("nozomi").click();
     clickLine("yamagata");
+    expect(routeSegments()).toHaveLength(0);
+    expect(lineGroup("yamagata").classList.contains("is-dimmed")).toBe(false);
     expect(onLine).toHaveBeenCalledWith(expect.objectContaining({ id: "yamagata" }));
     expect(card("tsubasa").classList.contains("is-emphasized")).toBe(true);
     expect(card("nozomi").classList.contains("is-dimmed")).toBe(true);

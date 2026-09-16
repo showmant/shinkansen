@@ -34,8 +34,11 @@ export function connectSound(events: SoundEvents, { speaker, effects }: SoundOut
   return () => offs.forEach((off) => off());
 }
 
-/** ブラウザの音声・オーディオとミュートボタンを用意して root に置く */
-export function installSound(app: App, root: HTMLElement): void {
+/**
+ * ブラウザの音声・オーディオとミュートボタンを用意して root に置く。
+ * ミュート状態は localStorage でページ共通 (しんかんせん・でんしゃ)。
+ */
+export function createBrowserSoundOutputs(root: HTMLElement): SoundOutputs {
   const mute = createMuteButton({
     storage: browserStorage(),
     onChange: (muted) => {
@@ -50,5 +53,10 @@ export function installSound(app: App, root: HTMLElement): void {
 
   // 自動再生制限: 最初のクリック (ユーザー操作) で AudioContext を resume
   document.addEventListener("pointerdown", () => effects.unlock(), { capture: true });
-  connectSound(app, { speaker, effects });
+  return { speaker, effects };
+}
+
+/** しんかんせん版: ブラウザの音を用意してアプリのイベントに結線する */
+export function installSound(app: App, root: HTMLElement): void {
+  connectSound(app, createBrowserSoundOutputs(root));
 }

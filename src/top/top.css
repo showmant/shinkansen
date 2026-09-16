@@ -1,0 +1,65 @@
+/* トップ画面: 大きな 2 つのボタン */
+#app.top {
+  justify-content: center;
+  gap: 48px;
+}
+
+.top .title {
+  font-size: 3rem;
+}
+
+.top-menu {
+  display: flex;
+  justify-content: center;
+  gap: 48px;
+  flex-wrap: wrap;
+}
+
+.top-menu__item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  width: min(520px, 42vw);
+  padding: 32px 28px;
+  border: 8px solid var(--menu-color);
+  border-radius: 36px;
+  background: #fff;
+  box-shadow: 0 8px 20px rgb(0 0 0 / 15%);
+  color: inherit;
+  text-decoration: none;
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.top-menu__item:hover {
+  transform: translateY(-10px) scale(1.02);
+  box-shadow: 0 16px 28px rgb(0 0 0 / 20%);
+}
+
+.top-menu__item:focus-visible {
+  outline: 4px solid #333;
+  outline-offset: 4px;
+}
+
+.top-menu__illustration {
+  width: 100%;
+}
+
+.top-menu__illustration svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.top-menu__kana {
+  font-size: 3.2rem;
+  font-weight: bold;
+  letter-spacing: 0.1em;
+}
+
+.top-menu__sub {
+  font-size: 1.2rem;
+  color: #555;
+}

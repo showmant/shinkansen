@@ -1,4 +1,17 @@
-import type { Line, LineId, Train } from "./data/types";
+import type { LineId, Train } from "./data/types";
+
+/** 経路探索に必要な列車の情報 (でんしゃ版の特急でも使う) */
+export interface RouteTrain<L extends string = string> {
+  lineIds: readonly L[];
+  from: string;
+  to: string;
+}
+
+/** 経路探索に必要な路線の情報 */
+export interface RouteLine<L extends string = string> {
+  id: L;
+  stationIds: readonly string[];
+}
 
 /** 列車の走る路線以外を通るときのコスト。自路線でつながる限り他路線は使わない */
 const OFF_LINE_COST = 1000;
@@ -8,8 +21,8 @@ const OFF_LINE_COST = 1000;
  * 列車の lineIds 上の区間を優先して最短経路をたどるので、路線またぎや逆向きでも連結できる。
  * lineIds どうしが駅を共有しない場合 (北陸新幹線の大宮→高崎など) だけ他路線を経由する。
  */
-export function buildRoute(train: Train, lines: readonly Line[]): string[] {
-  const ownLines = new Set<LineId>(train.lineIds);
+export function buildRoute<L extends string>(train: RouteTrain<L>, lines: readonly RouteLine<L>[]): string[] {
+  const ownLines = new Set<L>(train.lineIds);
   const edges = new Map<string, Array<{ to: string; cost: number }>>();
   const addEdge = (a: string, b: string, cost: number) => {
     const list = edges.get(a) ?? [];

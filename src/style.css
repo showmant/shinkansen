@@ -318,3 +318,32 @@ body {
 .mute-button[aria-pressed="true"] {
   background: #e0e0e0;
 }
+
+/* 画面左上の「もどる」ボタン (トップ画面へ) */
+.home-button {
+  position: fixed;
+  top: 16px;
+  left: 24px;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  height: 64px;
+  padding: 0 22px;
+  border-radius: 32px;
+  background: #fff;
+  box-shadow: 0 4px 10px rgb(0 0 0 / 18%);
+  color: #222;
+  font-size: 1.5rem;
+  font-weight: bold;
+  text-decoration: none;
+  transition: transform 0.15s ease;
+}
+
+.home-button:hover {
+  transform: scale(1.06);
+}
+
+.home-button:focus-visible {
+  outline: 3px solid #333;
+  outline-offset: 2px;
+}

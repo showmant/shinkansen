@@ -119,5 +119,7 @@ export interface LimitedExpress {
   /** 地図の外まで走るときの本当の始発・終着 (ひらがな) */
   speechFrom?: string;
   speechTo?: string;
+  /** 終着から先も地図の端まで直線でのばして走らせる (あずさ など、地図の範囲内に線路がない区間が長いとき) */
+  edgeExit?: boolean;
   fact: string;
 }

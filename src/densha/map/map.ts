@@ -65,6 +65,11 @@ export interface RoutePiece {
   points: Point[];
 }
 
+export interface RouteOptions {
+  /** 終着駅から先、地図の外まで走る (あずさ など) ときに、最後の区間を表示範囲の端まで直線でのばす */
+  extendToEdge?: boolean;
+}
+
 export interface DenshaMap {
   element: SVGSVGElement;
   /** 走るアイコンなどを載せる一番上の層 */
@@ -72,10 +77,10 @@ export interface DenshaMap {
   /** 指定路線だけを強調して寄る。null で全体表示 */
   highlightLines(lineIds: readonly string[] | null): void;
   /** 駅列の区間を太く描いて寄る */
-  highlightRoute(stationIds: readonly string[], preferLineIds: readonly string[]): RoutePiece[];
+  highlightRoute(stationIds: readonly string[], preferLineIds: readonly string[], options?: RouteOptions): RoutePiece[];
   onLineClick(cb: (lineId: string) => void): () => void;
   /** 駅列に沿った走行用の折れ線 (SVG 座標) */
-  routePoints(stationIds: readonly string[], preferLineIds: readonly string[]): Point[];
+  routePoints(stationIds: readonly string[], preferLineIds: readonly string[], options?: RouteOptions): Point[];
   /** 現在の拡大率 (1 = 全体表示。数字が小さいほど寄っている) */
   scale(): number;
   onScale(cb: (scale: number) => void): () => void;
@@ -324,13 +329,36 @@ export function createDenshaMap(lines: readonly RailLine[]): DenshaMap {
     return { lineId: line.id, points: flat(segs[i - 1]).reverse() };
   };
 
-  const routePieces = (stationIds: readonly string[], preferLineIds: readonly string[]): RoutePiece[] => {
+  /** 折れ線の最後の向きのまま、表示範囲 (地図全体) の端まで直線でのばした点を返す */
+  const edgePoint = (points: readonly Point[]): Point | null => {
+    if (points.length < 2) return null;
+    const a = points[points.length - 2];
+    const b = points[points.length - 1];
+    const dx = b.x - a.x;
+    const dy = b.y - a.y;
+    const ts = [
+      dx > 0 ? (fullView.width - b.x) / dx : null,
+      dx < 0 ? (fullView.x - b.x) / dx : null,
+      dy > 0 ? (fullView.height - b.y) / dy : null,
+      dy < 0 ? (fullView.y - b.y) / dy : null,
+    ].filter((t): t is number => t !== null && t > 0);
+    if (ts.length === 0) return null;
+    const t = Math.min(...ts);
+    return { x: b.x + dx * t, y: b.y + dy * t };
+  };
+
+  const routePieces = (stationIds: readonly string[], preferLineIds: readonly string[], options: RouteOptions = {}): RoutePiece[] => {
     const pieces: RoutePiece[] = [];
     for (let i = 1; i < stationIds.length; i++) {
       const seg = segmentBetween(stationIds[i - 1], stationIds[i], preferLineIds);
       const last = pieces.at(-1);
       if (last?.lineId === seg.lineId) last.points.push(...seg.points.slice(1));
       else pieces.push(seg);
+    }
+    if (options.extendToEdge) {
+      const last = pieces.at(-1);
+      const edge = last && edgePoint(last.points);
+      if (edge) last.points.push(edge);
     }
     return pieces;
   };
@@ -389,8 +417,8 @@ export function createDenshaMap(lines: readonly RailLine[]): DenshaMap {
       labelIds = stationIds;
       zoomTo(fit(selected.flatMap((l) => linePoints.get(l.id) ?? [])));
     },
-    highlightRoute(stationIds, preferLineIds) {
-      const pieces = routePieces(stationIds, preferLineIds);
+    highlightRoute(stationIds, preferLineIds, options) {
+      const pieces = routePieces(stationIds, preferLineIds, options);
       dimLines(new Set());
       dimStations(new Set(stationIds));
       drawRoute(pieces);
@@ -399,8 +427,8 @@ export function createDenshaMap(lines: readonly RailLine[]): DenshaMap {
       zoomTo(fit(pieces.flatMap((p) => p.points)));
       return pieces;
     },
-    routePoints(stationIds, preferLineIds) {
-      return routePieces(stationIds, preferLineIds).flatMap((p, i) => (i === 0 ? p.points : p.points.slice(1)));
+    routePoints(stationIds, preferLineIds, options) {
+      return routePieces(stationIds, preferLineIds, options).flatMap((p, i) => (i === 0 ? p.points : p.points.slice(1)));
     },
     onLineClick(cb) {
       clickHandlers.add(cb);

@@ -165,7 +165,8 @@ export function createDenshaApp(root: HTMLElement, { lines, expresses }: DenshaA
       const express = expresses.find((e) => e.id === id);
       if (!express) throw new Error(`unknown express: ${id}`);
       const route = expressRoute(express, lines);
-      map.highlightRoute(route, express.lineIds);
+      const routeOptions = { extendToEdge: express.edgeExit };
+      map.highlightRoute(route, express.lineIds, routeOptions);
       renderInfo(
         info,
         express.vehicle,
@@ -174,7 +175,12 @@ export function createDenshaApp(root: HTMLElement, { lines, expresses }: DenshaA
         express.fact,
         lineById(express.lineIds[0]).color,
       );
-      run(express.vehicle, map.routePoints(route, express.lineIds), expressSpeechText(express, passesHome(route)), express.fact);
+      run(
+        express.vehicle,
+        map.routePoints(route, express.lineIds, routeOptions),
+        expressSpeechText(express, passesHome(route)),
+        express.fact,
+      );
     }
   };
 

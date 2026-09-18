@@ -1,6 +1,7 @@
 import "../style.css";
 import "./top.css";
 import { railLines } from "../densha/data/lines";
+import { addVoiceCredit } from "../sound/credit";
 import { denshaSvg } from "../densha/trains/illustration";
 import { trains } from "../data/trains";
 import { trainSvg } from "../trains/illustration";
@@ -60,4 +61,5 @@ if (root) {
     nav.append(link);
   }
   root.append(title, nav);
+  addVoiceCredit(root);
 }

@@ -347,3 +347,16 @@ body {
   outline: 3px solid #333;
   outline-offset: 2px;
 }
+
+/* 画面下のクレジット (VOICEVOX の規約で必要) */
+.credit {
+  margin: 0;
+  color: #7a8b99;
+  font-size: 0.72rem;
+  line-height: 1.6;
+  text-align: center;
+}
+
+.credit a {
+  color: inherit;
+}

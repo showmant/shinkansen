@@ -51,7 +51,7 @@ describe("connectSound", () => {
     handlers.start.forEach((cb) => cb(hayabusa));
     expect(effects.chime).toHaveBeenCalled();
     expect(effects.startMotor).toHaveBeenCalled();
-    expect(speaker.speak).toHaveBeenCalledWith(expect.stringContaining("しんはこだてほくと"));
+    expect(speaker.speak).toHaveBeenCalledWith(expect.objectContaining({ text: expect.stringContaining("しんはこだてほくと") }));
   });
 
   it("到着でモーター停止・ポーン音・fact の読み上げ", () => {
@@ -62,7 +62,7 @@ describe("connectSound", () => {
     handlers.arrive.forEach((cb) => cb(hayabusa));
     expect(effects.stopMotor).toHaveBeenCalled();
     expect(effects.arrive).toHaveBeenCalled();
-    expect(speaker.speak).toHaveBeenCalledWith(expect.stringContaining(hayabusa.fact));
+    expect(speaker.speak).toHaveBeenCalledWith(expect.objectContaining({ text: expect.stringContaining(hayabusa.fact) }));
   });
 
   it("路線クリックで路線名を読む", () => {
@@ -71,7 +71,7 @@ describe("connectSound", () => {
     const effects = fakeEffects();
     connectSound(events, { speaker, effects });
     handlers.line.forEach((cb) => cb(tokaido));
-    expect(speaker.speak).toHaveBeenCalledWith("とうかいどう しんかんせん");
+    expect(speaker.speak).toHaveBeenCalledWith(expect.objectContaining({ text: "とうかいどう しんかんせん" }));
   });
 
   it("走行中断でモーター音と読み上げを止める", () => {

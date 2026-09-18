@@ -1,7 +1,7 @@
 import type { App } from "../app";
 import { browserEffects, type Effects } from "./effects";
 import { browserStorage, createMuteButton } from "./mute";
-import { arrivalSpeechText, browserSpeaker, lineSpeechText, trainSpeechText, type Speaker } from "./speech";
+import { arrivalSpeech, browserSpeaker, lineSpeech, trainSpeech, type Speaker } from "./speech";
 
 export type SoundEvents = Pick<App, "onTrainStart" | "onTrainArrive" | "onLineSelect" | "onRunStop">;
 
@@ -16,15 +16,15 @@ export function connectSound(events: SoundEvents, { speaker, effects }: SoundOut
     events.onTrainStart((train) => {
       effects.chime();
       effects.startMotor();
-      speaker.speak(trainSpeechText(train));
+      speaker.speak(trainSpeech(train));
     }),
     events.onTrainArrive((train) => {
       effects.stopMotor();
       effects.arrive();
-      speaker.speak(arrivalSpeechText(train));
+      speaker.speak(arrivalSpeech(train));
     }),
     events.onLineSelect((line) => {
-      speaker.speak(lineSpeechText(line));
+      speaker.speak(lineSpeech(line));
     }),
     events.onRunStop(() => {
       effects.stopMotor();

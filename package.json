@@ -8,7 +8,8 @@
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
     "test": "vitest run",
-    "lint": "tsc --noEmit"
+    "lint": "tsc --noEmit",
+    "voices": "node scripts/build-voices.mjs"
   },
   "devDependencies": {
     "happy-dom": "^20.14.5",

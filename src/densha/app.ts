@@ -1,13 +1,9 @@
 import { startRun } from "../animation";
 import type { Point } from "../map/projection";
+import type { Speech } from "../sound/voices";
 import { expressRoute, passesHome, buildCardGroups } from "./data/groups";
 import { createDenshaMap, type DenshaMap } from "./map/map";
-import {
-  arrivalSpeechText,
-  expressSpeechText,
-  lineNameSpeechText,
-  lineSpeechText,
-} from "./speech";
+import { arrivalSpeech, expressSpeech, lineNameSpeech, lineSpeech } from "./speech";
 import { createCardPanel, expressKey, lineKey, type CardKey } from "./trains/cards";
 import { denshaSvg } from "./trains/illustration";
 import type { LimitedExpress, RailLine, Vehicle } from "./types";
@@ -26,9 +22,9 @@ type Unsubscribe = () => void;
 
 /** 音の結線口 (読み上げる文を渡す) */
 export interface DenshaApp {
-  onRunStart(cb: (text: string) => void): Unsubscribe;
-  onRunArrive(cb: (text: string) => void): Unsubscribe;
-  onLineSelect(cb: (text: string) => void): Unsubscribe;
+  onRunStart(cb: (speech: Speech) => void): Unsubscribe;
+  onRunArrive(cb: (speech: Speech) => void): Unsubscribe;
+  onLineSelect(cb: (speech: Speech) => void): Unsubscribe;
   onRunStop(cb: () => void): Unsubscribe;
 }
 
@@ -82,9 +78,9 @@ export function createDenshaApp(root: HTMLElement, { lines, expresses }: DenshaA
   layout.append(mapFrame, side);
   root.append(title, layout);
 
-  const runStart = emitter<string>();
-  const runArrive = emitter<string>();
-  const lineSelect = emitter<string>();
+  const runStart = emitter<Speech>();
+  const runArrive = emitter<Speech>();
+  const lineSelect = emitter<Speech>();
   const runStop = emitter<void>();
 
   let selection: Selection = { kind: "none" };
@@ -99,9 +95,9 @@ export function createDenshaApp(root: HTMLElement, { lines, expresses }: DenshaA
     runner.hide();
   };
 
-  const run = (vehicle: Vehicle, points: readonly Point[], startText: string, fact: string) => {
+  const run = (vehicle: Vehicle, points: readonly Point[], start: Speech, fact: string) => {
     runner.show(vehicle, points[0]);
-    runStart.emit(startText);
+    runStart.emit(start);
     const length = points.reduce((sum, p, i) => (i === 0 ? 0 : sum + Math.hypot(p.x - points[i - 1].x, p.y - points[i - 1].y)), 0);
     // 寄ったあと (ズーム完了後) に走り出す
     const delay = window.setTimeout(() => {
@@ -112,7 +108,7 @@ export function createDenshaApp(root: HTMLElement, { lines, expresses }: DenshaA
         onArrive: () => {
           cancelRun = null;
           runner.arrive();
-          runArrive.emit(arrivalSpeechText(fact));
+          runArrive.emit(arrivalSpeech(start.voice, fact));
         },
       });
     }, 700);
@@ -148,7 +144,7 @@ export function createDenshaApp(root: HTMLElement, { lines, expresses }: DenshaA
       panel.setSelected(null);
       panel.emphasize([lineKey(line.id), ...expressesOn(line.id)]);
       renderInfo(info, line.vehicle, line.kana, `${line.name}`, "ひかっている でんしゃ を えらんでみてね", line.color);
-      lineSelect.emit(lineNameSpeechText(line));
+      lineSelect.emit(lineNameSpeech(line));
       return;
     }
 
@@ -160,7 +156,7 @@ export function createDenshaApp(root: HTMLElement, { lines, expresses }: DenshaA
       map.highlightLines([line.id]);
       const home = passesHome(line.stationIds);
       renderInfo(info, line.vehicle, line.kana, `${line.name}・${line.vehicle.series}`, line.fact, line.color);
-      run(line.vehicle, map.routePoints(line.stationIds, [line.id]), lineSpeechText(line, home), line.fact);
+      run(line.vehicle, map.routePoints(line.stationIds, [line.id]), lineSpeech(line, home), line.fact);
     } else {
       const express = expresses.find((e) => e.id === id);
       if (!express) throw new Error(`unknown express: ${id}`);
@@ -178,7 +174,7 @@ export function createDenshaApp(root: HTMLElement, { lines, expresses }: DenshaA
       run(
         express.vehicle,
         map.routePoints(route, express.lineIds, routeOptions),
-        expressSpeechText(express, passesHome(route)),
+        expressSpeech(express, passesHome(route)),
         express.fact,
       );
     }

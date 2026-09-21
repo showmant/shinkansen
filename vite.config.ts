@@ -4,8 +4,8 @@ export default defineConfig({
   base: "/shinkansen/",
   build: {
     rollupOptions: {
-      // トップ・しんかんせん・でんしゃ の 3 ページ (パスはプロジェクトルートから)
-      input: { index: "index.html", shinkansen: "shinkansen.html", densha: "densha.html" },
+      // トップ・しんかんせん・でんしゃ・くいず の 4 ページ (パスはプロジェクトルートから)
+      input: { index: "index.html", shinkansen: "shinkansen.html", densha: "densha.html", quiz: "quiz.html" },
     },
   },
   test: {

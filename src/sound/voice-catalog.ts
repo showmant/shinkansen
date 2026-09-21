@@ -9,6 +9,7 @@ import {
   lineNameSpeech,
   lineSpeech as denshaLineSpeech,
 } from "../densha/speech";
+import { quizSpeeches } from "../quiz/catalog";
 import { arrivalSpeech, lineSpeech, trainSpeech } from "./speech";
 import { voiceKey, type Speech } from "./voices";
 
@@ -33,6 +34,9 @@ export function voiceCatalog(): Speech[] {
     const start = expressSpeech(express, passesHome(expressRoute(express, railLines)));
     all.push(start, denshaArrivalSpeech(start.voice, express.fact));
   }
+
+  // クイズ
+  all.push(...quizSpeeches());
 
   // 同じ声・同じ文は 1 ファイルで足りる
   const byKey = new Map(all.map((s) => [voiceKey(s), s]));

@@ -14,6 +14,8 @@ const HIT_WIDTH = 16;
 const DOT_RADIUS = 2.2;
 const LABEL_SIZE = 13;
 const ZOOM_MS = 700;
+/** focusStation で寄るときの、駅から表示範囲の端までの距離 (SVG 座標) */
+const FOCUS_RADIUS = 70;
 
 /** 何も選んでいないときに名前を出す駅 */
 const MAJOR_STATION_IDS: readonly string[] = [
@@ -78,6 +80,8 @@ export interface DenshaMap {
   highlightLines(lineIds: readonly string[] | null): void;
   /** 駅列の区間を太く描いて寄る */
   highlightRoute(stationIds: readonly string[], preferLineIds: readonly string[], options?: RouteOptions): RoutePiece[];
+  /** 1 つの駅のまわりに寄る (全路線はそのまま、その駅の名前を必ず出す)。クイズ用 */
+  focusStation(stationId: string): void;
   onLineClick(cb: (lineId: string) => void): () => void;
   /** 駅列に沿った走行用の折れ線 (SVG 座標) */
   routePoints(stationIds: readonly string[], preferLineIds: readonly string[], options?: RouteOptions): Point[];
@@ -426,6 +430,19 @@ export function createDenshaMap(lines: readonly RailLine[]): DenshaMap {
       labelIds = stationIds;
       zoomTo(fit(pieces.flatMap((p) => p.points)));
       return pieces;
+    },
+    focusStation(stationId) {
+      const p = stationPoint(stationId);
+      dimLines(null);
+      dimStations(null);
+      routeLayer.replaceChildren();
+      alwaysIds = new Set([stationId]);
+      labelIds = denshaStations.map((s) => s.id);
+      // 駅のまわり (半径 FOCUS_RADIUS) が収まるように寄る
+      zoomTo(fit([
+        { x: p.x - FOCUS_RADIUS, y: p.y - FOCUS_RADIUS },
+        { x: p.x + FOCUS_RADIUS, y: p.y + FOCUS_RADIUS },
+      ]));
     },
     routePoints(stationIds, preferLineIds, options) {
       return routePieces(stationIds, preferLineIds, options).flatMap((p, i) => (i === 0 ? p.points : p.points.slice(1)));

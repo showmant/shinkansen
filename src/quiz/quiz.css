@@ -1,0 +1,665 @@
+/* くいず: ジャンル選択 → 地図 (左) と もんだい・4たく (右) → けっか */
+
+#app.quiz {
+  position: relative;
+  overflow: hidden;
+}
+
+.quiz-screen {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.quiz-title {
+  font-size: 2.4rem;
+}
+
+/* ---- ジャンル選択 ---- */
+
+.quiz-screen--genre {
+  justify-content: center;
+  gap: 48px;
+}
+
+.quiz-screen--genre .quiz-title {
+  font-size: 3rem;
+}
+
+.quiz-genres {
+  display: flex;
+  justify-content: center;
+  gap: 48px;
+  flex-wrap: wrap;
+}
+
+.quiz-genre {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  width: min(460px, 40vw);
+  padding: 32px 28px;
+  border: 8px solid var(--menu-color);
+  border-radius: 36px;
+  background: #fff;
+  box-shadow: 0 8px 20px rgb(0 0 0 / 15%);
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.quiz-genre:hover {
+  transform: translateY(-10px) scale(1.02);
+  box-shadow: 0 16px 28px rgb(0 0 0 / 20%);
+}
+
+.quiz-genre:focus-visible {
+  outline: 4px solid #333;
+  outline-offset: 4px;
+}
+
+.quiz-genre__illustration {
+  width: 100%;
+}
+
+.quiz-genre__illustration svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.quiz-genre__kana {
+  font-size: 3rem;
+  font-weight: bold;
+  letter-spacing: 0.1em;
+}
+
+/* ---- 出題 ---- */
+
+.quiz-progress {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+}
+
+.quiz-progress__dot {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 2px 6px rgb(0 0 0 / 12%);
+  font-size: 1.3rem;
+  font-weight: bold;
+  color: #999;
+}
+
+.quiz-progress__dot.is-done {
+  color: inherit;
+}
+
+.quiz-progress__dot.is-current {
+  outline: 4px solid #8e5bd8;
+  color: #8e5bd8;
+}
+
+.quiz-layout {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(380px, 1fr);
+  gap: 24px;
+}
+
+.quiz-map-frame {
+  min-height: 0;
+  min-width: 0;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+}
+
+.quiz-map-frame .densha-map,
+.quiz-map-frame .japan-map {
+  width: 100%;
+  height: auto;
+  max-width: 100%;
+  max-height: 100%;
+  border-radius: 24px;
+}
+
+/* クイズ中は地図をさわっても何も起きない */
+.quiz-map-frame svg {
+  pointer-events: none;
+}
+
+/* 歯抜けの駅は地図の駅名を隠して「？」の吹き出しにする */
+.densha-station.is-quiz-hidden .densha-station-label {
+  display: none;
+}
+
+/* しんかんせんの地図: 寄ったぶんだけ線を細くして、画面上の太さを保つ (--k = 拡大率) */
+.quiz-japan-map {
+  --k: 1;
+}
+
+.quiz-japan-map .map-land polygon {
+  stroke-width: calc(var(--k) * 1.5px);
+}
+
+.quiz-japan-map .map-line-stroke {
+  stroke-width: calc(var(--k) * 7px);
+}
+
+.quiz-japan-map .map-route-casing {
+  stroke-width: calc(var(--k) * 22px);
+}
+
+.quiz-japan-map .map-route-segment {
+  stroke-width: calc(var(--k) * 14px);
+}
+
+.quiz-japan-map .map-station-dot {
+  stroke-width: calc(var(--k) * 2.5px);
+}
+
+/* 主要駅の名前は出さず、クイズ側のラベル (.quiz-label) だけにする */
+.quiz-japan-map .map-station-label {
+  display: none;
+}
+
+.quiz-label {
+  font-size: calc(var(--k) * 22px);
+  font-weight: bold;
+  fill: #333;
+  stroke: #fff;
+  stroke-width: calc(var(--k) * 5px);
+  stroke-linejoin: round;
+  paint-order: stroke;
+}
+
+/* 駅の上の吹き出し (「？」「ここ」、答え合わせで駅名) */
+.quiz-marker__ring {
+  fill: rgb(255 193 7 / 35%);
+  stroke: #ffb300;
+  stroke-width: 4;
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: quiz-ring 1.2s ease-in-out infinite;
+}
+
+.quiz-marker__bubble {
+  fill: #ffc107;
+  stroke: #fff;
+  stroke-width: 4;
+  paint-order: stroke;
+}
+
+.quiz-marker__text {
+  font-size: 30px;
+  font-weight: bold;
+  fill: #333;
+}
+
+.quiz-marker.is-answer .quiz-marker__bubble {
+  fill: #7ed957;
+}
+
+.quiz-marker.is-answer .quiz-marker__ring {
+  fill: rgb(126 217 87 / 35%);
+  stroke: #4caf50;
+}
+
+@keyframes quiz-ring {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.5);
+  }
+}
+
+.quiz-panel {
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 20px 24px;
+  border-radius: 28px;
+  background: #fff;
+  box-shadow: 0 4px 12px rgb(0 0 0 / 12%);
+  overflow-y: auto;
+}
+
+.quiz-prompt {
+  margin: 0;
+  font-size: 2rem;
+  font-weight: bold;
+  line-height: 1.5;
+  letter-spacing: 0.05em;
+}
+
+.quiz-listen {
+  align-self: flex-start;
+  padding: 6px 16px;
+  border: 3px solid #d5d9de;
+  border-radius: 999px;
+  background: #fff;
+  font: inherit;
+  font-size: 1.1rem;
+  cursor: pointer;
+}
+
+.quiz-listen:hover {
+  border-color: #8e5bd8;
+}
+
+/* 歯抜けの駅の並び */
+.quiz-strip {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.quiz-strip__station {
+  padding: 6px 14px;
+  border: 4px solid var(--line-color);
+  border-radius: 999px;
+  background: #fff;
+  font-size: 1.3rem;
+  font-weight: bold;
+}
+
+.quiz-strip__station:not(:last-child)::after {
+  content: " →";
+  color: #999;
+}
+
+.quiz-strip__station.is-hidden,
+.quiz-strip__station.is-revealed {
+  background: #fff4cc;
+  border-color: #ffb300;
+}
+
+.quiz-strip__station.is-revealed {
+  background: #e6f8dc;
+  border-color: #4caf50;
+}
+
+/* 4たく: 大きく、クリックしやすく */
+.quiz-choices {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+}
+
+.quiz-choice {
+  min-height: 96px;
+  padding: 12px;
+  border: 5px solid #cfd8e3;
+  border-radius: 24px;
+  background: #f8fbff;
+  box-shadow: 0 5px 0 #cfd8e3;
+  font: inherit;
+  font-size: 1.8rem;
+  font-weight: bold;
+  color: inherit;
+  cursor: pointer;
+  transition:
+    transform 0.1s ease,
+    box-shadow 0.1s ease,
+    border-color 0.2s ease,
+    background 0.2s ease,
+    opacity 0.2s ease;
+}
+
+.quiz-choice--long {
+  font-size: 1.35rem;
+}
+
+.quiz-choice:hover:not(:disabled) {
+  border-color: #8e5bd8;
+  transform: translateY(-3px);
+  box-shadow: 0 8px 0 #cfd8e3;
+}
+
+.quiz-choice:active:not(:disabled) {
+  transform: translateY(3px);
+  box-shadow: 0 2px 0 #cfd8e3;
+}
+
+.quiz-choice:focus-visible {
+  outline: 4px solid #333;
+  outline-offset: 3px;
+}
+
+.quiz-choice:disabled {
+  cursor: default;
+  opacity: 0.45;
+}
+
+/* こたえ はいつも光らせて教える (えらんだ・えらばない に かかわらず) */
+.quiz-choice.is-answer:disabled {
+  opacity: 1;
+  border-color: #4caf50;
+  background: #e6f8dc;
+  box-shadow:
+    0 5px 0 #4caf50,
+    0 0 24px 6px rgb(126 217 87 / 60%);
+  animation: quiz-pop 0.5s ease;
+}
+
+/* えらんだ ほう (こたえ でなくても責めない: やさしい 点線 だけ) */
+.quiz-choice.is-picked:not(.is-answer):disabled {
+  opacity: 0.8;
+  border-style: dashed;
+  border-color: #8e5bd8;
+}
+
+@keyframes quiz-pop {
+  0% {
+    transform: scale(1);
+  }
+  40% {
+    transform: scale(1.08);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.quiz-feedback {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-height: 0;
+}
+
+.quiz-feedback p {
+  margin: 0;
+}
+
+.quiz-feedback__main {
+  font-size: 2rem;
+  font-weight: bold;
+}
+
+.quiz-feedback.is-correct .quiz-feedback__main {
+  color: #e67e00;
+}
+
+.quiz-feedback.is-try .quiz-feedback__main {
+  color: #6a3fb5;
+}
+
+.quiz-feedback__sub {
+  font-size: 1.5rem;
+  line-height: 1.5;
+}
+
+.quiz-feedback__sub strong {
+  color: #2e7d32;
+  font-size: 1.15em;
+}
+
+.quiz-next,
+.quiz-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 72px;
+  padding: 0 36px;
+  border: none;
+  border-radius: 999px;
+  background: #fff;
+  box-shadow: 0 5px 0 #cfd8e3;
+  font: inherit;
+  font-size: 1.7rem;
+  font-weight: bold;
+  color: #222;
+  text-decoration: none;
+  cursor: pointer;
+  transition: transform 0.15s ease;
+}
+
+.quiz-next[hidden] {
+  display: none;
+}
+
+.quiz-next {
+  align-self: flex-end;
+  background: #8e5bd8;
+  box-shadow: 0 5px 0 #6a3fb5;
+  color: #fff;
+  animation: quiz-pop 0.5s ease;
+}
+
+.quiz-next:hover,
+.quiz-action:hover {
+  transform: scale(1.05);
+}
+
+.quiz-next:focus-visible,
+.quiz-action:focus-visible {
+  outline: 4px solid #333;
+  outline-offset: 3px;
+}
+
+/* ---- 正解の お祝い ---- */
+
+.quiz-burst {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+}
+
+.quiz-burst__card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 24px 64px 32px;
+  border-radius: 48px;
+  background: rgb(255 255 255 / 92%);
+  box-shadow: 0 12px 40px rgb(0 0 0 / 20%);
+  animation: quiz-burst 2.2s ease forwards;
+}
+
+.quiz-burst__main {
+  color: #ff8f00;
+  font-size: clamp(3.5rem, 11vw, 8rem);
+  font-weight: bold;
+  line-height: 1.2;
+  letter-spacing: 0.08em;
+  white-space: nowrap;
+  text-shadow: 0 5px 0 #ffe082;
+}
+
+.quiz-burst__sub {
+  color: #6a3fb5;
+  font-size: clamp(1.8rem, 4vw, 3rem);
+  font-weight: bold;
+  white-space: nowrap;
+}
+
+@keyframes quiz-burst {
+  0% {
+    opacity: 0;
+    transform: scale(0.3) rotate(-8deg);
+  }
+  18% {
+    opacity: 1;
+    transform: scale(1.12) rotate(3deg);
+  }
+  30% {
+    transform: scale(1) rotate(0);
+  }
+  80% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.1);
+  }
+}
+
+.quiz-confetti {
+  position: fixed;
+  inset: 0;
+  z-index: 19;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.quiz-confetti__piece,
+.quiz-confetti__sparkle {
+  position: absolute;
+  top: -40px;
+  animation-name: quiz-fall;
+  animation-timing-function: cubic-bezier(0.3, 0.6, 0.6, 1);
+  animation-fill-mode: forwards;
+}
+
+.quiz-confetti__piece {
+  width: 12px;
+  height: 18px;
+  border-radius: 3px;
+}
+
+.quiz-confetti__sparkle {
+  font-size: 2rem;
+}
+
+@keyframes quiz-fall {
+  0% {
+    opacity: 1;
+    transform: translate(0, 0) rotate(0);
+  }
+  85% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translate(var(--drift), 105vh) rotate(var(--spin));
+  }
+}
+
+/* ---- けっか ---- */
+
+.quiz-screen--result {
+  align-items: center;
+  overflow-y: auto;
+}
+
+.quiz-result {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  width: min(900px, 100%);
+  padding: 24px 32px;
+  border-radius: 36px;
+  background: #fff;
+  box-shadow: 0 8px 20px rgb(0 0 0 / 12%);
+}
+
+.quiz-result p {
+  margin: 0;
+}
+
+.quiz-result__trophy {
+  font-size: 5rem;
+  line-height: 1;
+  animation: quiz-pop 0.8s ease 2;
+}
+
+.quiz-result__score {
+  font-size: clamp(2.2rem, 5vw, 3.6rem);
+  font-weight: bold;
+  color: #ff8f00;
+  letter-spacing: 0.05em;
+}
+
+.quiz-result__praise {
+  font-size: 2rem;
+  font-weight: bold;
+  color: #6a3fb5;
+}
+
+.quiz-result__stars {
+  font-size: 2.4rem;
+  letter-spacing: 0.2em;
+}
+
+.quiz-review {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.quiz-review__item {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 16px;
+  border-radius: 16px;
+  background: #f4f8fc;
+  font-size: 1.2rem;
+}
+
+.quiz-review__mark {
+  font-size: 1.6rem;
+}
+
+.quiz-review__answer {
+  padding: 4px 14px;
+  border-radius: 999px;
+  background: #e6f8dc;
+  font-weight: bold;
+  color: #2e7d32;
+}
+
+.quiz-result__actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 16px;
+  margin-top: 8px;
+}
+
+.quiz-action--primary {
+  background: #8e5bd8;
+  box-shadow: 0 5px 0 #6a3fb5;
+  color: #fff;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .quiz-marker__ring,
+  .quiz-burst__card,
+  .quiz-result__trophy,
+  .quiz-next,
+  .quiz-choice.is-answer:disabled {
+    animation: none;
+  }
+}

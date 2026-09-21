@@ -1,4 +1,4 @@
-/* トップ画面: 大きな 2 つのボタン */
+/* トップ画面: 大きな 3 つのボタン (しんかんせん・でんしゃ・くいず) */
 #app.top {
   justify-content: center;
   gap: 48px;
@@ -11,7 +11,7 @@
 .top-menu {
   display: flex;
   justify-content: center;
-  gap: 48px;
+  gap: 32px;
   flex-wrap: wrap;
 }
 
@@ -20,7 +20,7 @@
   flex-direction: column;
   align-items: center;
   gap: 12px;
-  width: min(520px, 42vw);
+  width: min(420px, 29vw);
   padding: 32px 28px;
   border: 8px solid var(--menu-color);
   border-radius: 36px;
@@ -54,7 +54,7 @@
 }
 
 .top-menu__kana {
-  font-size: 3.2rem;
+  font-size: 2.8rem;
   font-weight: bold;
   letter-spacing: 0.1em;
 }

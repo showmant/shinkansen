@@ -3,6 +3,7 @@ import { stations as shinkansenStations } from "../data/stations";
 import { railLines } from "../densha/data/lines";
 import { denshaStations } from "../densha/data/stations";
 import { gapPrompt, linePrompt, stationPrompt, type Prompt } from "./phrases";
+import { machidaStationWeights } from "./weights";
 
 export type Genre = "shinkansen" | "densha";
 
@@ -27,6 +28,8 @@ export interface QuizData {
   stationKana: ReadonlyMap<string, string>;
   /** 「◯◯えき に とまる …」で出す駅 */
   stationQuizIds: readonly string[];
+  /** 答えにする駅・路線をえらぶときの駅ごとの重み。null ならどれも同じ確率 */
+  stationWeights: ReadonlyMap<string, number> | null;
 }
 
 export interface Choice {
@@ -61,6 +64,27 @@ export type Random = () => number;
 
 const pick = <T>(items: readonly T[], random: Random): T => items[Math.floor(random() * items.length)];
 
+/** weight に比例した確率で 1 つえらぶ */
+function weightedPick<T>(items: readonly T[], weight: (item: T) => number, random: Random): T {
+  const weights = items.map(weight);
+  let rest = random() * weights.reduce((a, b) => a + b, 0);
+  for (let i = 0; i < items.length; i++) {
+    rest -= weights[i];
+    if (rest < 0) return items[i];
+  }
+  return items[items.length - 1];
+}
+
+/** 答えにするものをえらぶ。重みがあれば重み付き、なければ一様 */
+const pickAnswer = <T>(data: QuizData, items: readonly T[], weight: (item: T) => number, random: Random): T =>
+  data.stationWeights ? weightedPick(items, weight, random) : pick(items, random);
+
+const stationWeight = (data: QuizData, id: string): number => data.stationWeights?.get(id) ?? 1;
+
+/** 路線の重み = 通る駅の重みの最大値 (町田のそばを通る路線ほど出やすい) */
+const lineWeight = (data: QuizData, line: QuizLine): number =>
+  Math.max(...line.stationIds.map((id) => stationWeight(data, id)));
+
 export function shuffle<T>(items: readonly T[], random: Random): T[] {
   const result = [...items];
   for (let i = result.length - 1; i > 0; i--) {
@@ -86,6 +110,7 @@ export function shinkansenQuizData(): QuizData {
     })),
     stationKana: new Map(shinkansenStations.map((s) => [s.id, s.kana])),
     stationQuizIds: shinkansenStations.map((s) => s.id),
+    stationWeights: null,
   };
 }
 
@@ -108,6 +133,8 @@ export function denshaQuizData(): QuizData {
     lines,
     stationKana: new Map(denshaStations.map((s) => [s.id, s.kana])),
     stationQuizIds: denshaStations.filter((s) => (lineCount.get(s.id) ?? 0) >= 2).map((s) => s.id),
+    // 町田に住む子向けに、町田のそばの駅・路線を出やすくする
+    stationWeights: machidaStationWeights(),
   };
 }
 
@@ -142,10 +169,13 @@ function sharesStation(a: QuizLine, b: QuizLine): boolean {
 /** タイプA: 路線の一部を並べて 1 駅だけ「？」にする */
 export function gapQuestion(data: QuizData, random: Random): Question {
   const candidates = data.lines.filter((l) => l.stationIds.length >= 3);
-  const line = pick(candidates, random);
-  const ids = line.stationIds;
   // 前後の駅が見えるよう、端の駅は「？」にしない
-  const index = 1 + Math.floor(random() * (ids.length - 2));
+  const inner = (l: QuizLine): string[] => l.stationIds.slice(1, -1);
+  const sumWeight = (l: QuizLine): number => inner(l).reduce((sum, id) => sum + stationWeight(data, id), 0);
+  const line = pickAnswer(data, candidates, sumWeight, random);
+  const ids = line.stationIds;
+  const innerIndexes = inner(line).map((_, i) => i + 1);
+  const index = pickAnswer(data, innerIndexes, (i) => stationWeight(data, ids[i]), random);
   const from = Math.max(0, index - GAP_CONTEXT);
   const shown = ids.slice(from, index + GAP_CONTEXT + 1);
   const hiddenId = ids[index];
@@ -172,7 +202,7 @@ export function gapQuestion(data: QuizData, random: Random): Question {
 
 /** タイプB: 光っている路線の名前 */
 export function lineQuestion(data: QuizData, random: Random): Question {
-  const line = pick(data.lines, random);
+  const line = pickAnswer(data, data.lines, (l) => lineWeight(data, l), random);
   const others = data.lines.filter((l) => l.id !== line.id);
   // 誤答: 同じ会社 (しんかんせん はつながっている路線) から 2 つ + 全体から
   const near = others.filter((l) => (line.group === null ? sharesStation(l, line) : l.group === line.group));
@@ -188,7 +218,7 @@ export function lineQuestion(data: QuizData, random: Random): Question {
 
 /** タイプC: この駅に止まる路線 */
 export function stationQuestion(data: QuizData, random: Random): Question {
-  const stationId = pick(data.stationQuizIds, random);
+  const stationId = pickAnswer(data, data.stationQuizIds, (id) => stationWeight(data, id), random);
   const passing = data.lines.filter((l) => l.stationIds.includes(stationId));
   const answer = pick(passing, random);
   // 誤答はこの駅を通らない路線だけ。のりつぎ先の路線 (近い路線) を優先する
